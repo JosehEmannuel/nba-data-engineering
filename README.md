@@ -31,7 +31,7 @@ transform/
 
 - [x] Modelagem da tabela Players
 - [x] Pipeline de ingestão de jogadores
-- [ ] Pipeline de Times
+- [x] Pipeline de Times
 - [ ] Pipeline de Jogos
 - [ ] Estatísticas dos jogadores
 - [ ] Modelagem Star Schema

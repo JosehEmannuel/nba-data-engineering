@@ -2,7 +2,7 @@ from nba_api.stats.static import players
 import pandas as pd
 
 from src.database.player_repository import PlayerRepository
-
+from src.services.nba_api_service import NBAApiService
 
 class PlayerIngestion:
 
@@ -11,7 +11,7 @@ class PlayerIngestion:
 
     def extract(self):
         """Extrai os dados da API"""
-        lista = players.get_players()
+        lista = NBAApiService.get_players()
         return pd.DataFrame(lista)
 
     def transform(self, df):
