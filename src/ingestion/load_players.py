@@ -1,72 +1,34 @@
-from nba_api.stats.static import players
-import pandas as pd
-
-from src.database.player_repository import PlayerRepository
+from src.ingestion.base_pipeline import BasePipeline
 from src.services.nba_api_service import NBAApiService
+from src.utils.batch import BatchProcessor
 
-class PlayerIngestion:
+
+class LoadPlayersPipeline(BasePipeline):
+    """
+    Responsável por realizar a carga inicial dos jogadores.
+    """
 
     def __init__(self):
-        self.repository = PlayerRepository()
+        super().__init__()
+        self.service = NBAApiService()
 
-    def extract(self):
-        """Extrai os dados da API"""
-        lista = NBAApiService.get_players()
-        return pd.DataFrame(lista)
+    def execute(self, uow):
 
-    def transform(self, df):
-        """Transforma os dados"""
+        generator = self.service.fetch_players()
 
-        df = df.rename(columns={
-            "id": "player_id"
-        })
+        total = 0
 
-        df = df[df["is_active"] == True]
+        for batch in BatchProcessor.chunk(generator, batch_size=100):
 
-        df = df[
-            [
-                "player_id",
-                "first_name",
-                "last_name",
-                "full_name",
-                "is_active"
-            ]
-        ]
+            uow.players.insert_players(batch)
 
-        return df
+            total += len(batch)
 
-    def load(self, df):
-        """Carrega os dados no banco"""
-
-        dados = [
-            (
-                int(row.player_id),
-                row.first_name,
-                row.last_name,
-                row.full_name,
-                bool(row.is_active)
+            self.logger.info(
+                f"{total} jogadores inseridos."
             )
-            for row in df.itertuples(index=False)
-        ]
-
-        self.repository.insert_players(dados)
-
-    def run(self):
-        """Executa todo o pipeline"""
-
-        df = self.extract()
-
-        print(f"Extraídos {len(df)} jogadores.")
-
-        df = self.transform(df)
-
-        print(f"Após transformação: {len(df)} jogadores ativos.")
-
-        self.load(df)
-
-        print("Pipeline finalizado com sucesso!")
 
 
 if __name__ == "__main__":
-    pipeline = PlayerIngestion()
-    pipeline.run()
+
+    LoadPlayersPipeline().run()

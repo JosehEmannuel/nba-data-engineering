@@ -1,19 +1,18 @@
 import mysql.connector
 
-from src.config.settings import (
-    DB_HOST,
-    DB_PORT,
-    DB_USER,
-    DB_PASSWORD,
-    DB_NAME
-)
+from src.config.settings import get_settings
 
 
-def get_connection():
-    return mysql.connector.connect(
-        host=DB_HOST,
-        port=DB_PORT,
-        user=DB_USER,
-        password=DB_PASSWORD,
-        database=DB_NAME,
-    )
+def get_connection(include_database: bool = True):
+    """Cria uma conexão transacional com o MySQL."""
+    settings = get_settings()
+    options = {
+        "host": settings.db_host,
+        "port": settings.db_port,
+        "user": settings.db_user,
+        "password": settings.db_password,
+        "autocommit": False,
+    }
+    if include_database:
+        options["database"] = settings.db_name
+    return mysql.connector.connect(**options)
