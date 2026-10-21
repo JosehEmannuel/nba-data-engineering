@@ -4,6 +4,7 @@ from src.repositories.player_repository import PlayerRepository
 from src.repositories.team_repository import TeamRepository
 from src.repositories.game_repository import GameRepository
 from src.repositories.player_game_stats_repository import PlayerGameStatsRepository
+from src.repositories.analytics_repository import AnalyticsRepository
 
 
 class UnitOfWork:
@@ -20,6 +21,8 @@ class UnitOfWork:
 
         self.player_game_stats = None
 
+        self.analytics = None
+
     def __enter__(self):
 
         self.session = DatabaseSession()
@@ -31,6 +34,8 @@ class UnitOfWork:
         self.games = GameRepository(self.session)
 
         self.player_game_stats = PlayerGameStatsRepository(self.session)
+
+        self.analytics = AnalyticsRepository(self.session)
 
         return self
 

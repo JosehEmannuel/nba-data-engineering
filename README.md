@@ -22,41 +22,36 @@ Projeto desenvolvido para praticar Engenharia de Dados utilizando dados reais da
 
 ## Estrutura
 
-src/
-database/
-ingestion/
-transform/
-
-sql/
-├── schema.sql
-├── indexes.sql
-└── views.sql
+- `src/ingestion/`: pipelines de carga de times, jogadores, jogos e estatísticas.
+- `src/repositories/`: acesso às tabelas por repositórios e Unit of Work.
+- `src/transform/`: atualização da camada analítica dimensional.
+- `sql/`: schema de ingestão, star schema, índices e views.
+- `tests/`: testes automatizados.
 
 ## Como executar
 
-1. Copie `.env.example` para `.env` e informe as credenciais do MySQL.
-2. Crie as tabelas sem remover dados existentes: `python -m src.database.initialize`.
-3. Carregue as dimensões: `python -m src.ingestion.load_teams` e `python -m src.ingestion.load_players`.
-4. Enriqueça os jogadores: `python -m src.ingestion.enrich_players`.
-5. Carregue jogos históricos: defina `NBA_START_SEASON` e `NBA_END_SEASON` no
-   `.env` e execute `python -m src.ingestion.load_games`. O padrão cobre de
-   1946-47 a 2025-26, somente jogos de temporada regular. Atualmente, o
-   endpoint utilizado pela NBA API disponibiliza partidas a partir de 1983-84;
-   as temporadas anteriores ficam registradas como consultadas sem jogos.
-6. Carregue os playoffs com `python -m src.ingestion.load_playoffs`.
-7. Carregue estatísticas individuais por partida com
-   `python -m src.ingestion.load_player_game_stats`. Esta etapa faz uma consulta
-   por jogo e pode levar várias horas; ela é retomável por jogo e utiliza o
-   endpoint V3 da NBA API, com fallback para V2 em partidas históricas.
+1. Instale as dependências com `pip install -r requirements.txt`.
+2. Copie `.env.example` para `.env` e informe as credenciais do MySQL.
+3. Crie as tabelas sem remover dados existentes: `python -m src.database.initialize`.
+4. Carregue times e jogadores:
+   `python -m src.ingestion.load_teams` e `python -m src.ingestion.load_players`.
+5. Enriqueça os jogadores: `python -m src.ingestion.enrich_players`.
+   O pipeline confirma cada lote de 25 jogadores; se a API falhar, os jogadores
+   sem checkpoint podem ser tentados na próxima execução.
+6. Configure `NBA_START_SEASON` e `NBA_END_SEASON` no `.env` e carregue os jogos
+   da temporada regular com `python -m src.ingestion.load_games`. O padrão cobre
+   de 1946-47 a 2025-26; o endpoint usado disponibiliza partidas a partir de
+   1983-84 e registra temporadas anteriores como consultadas sem jogos.
+7. Carregue os playoffs com `python -m src.ingestion.load_playoffs`.
+8. Carregue estatísticas individuais por partida com
+   `python -m src.ingestion.load_player_game_stats`. Esta etapa consulta jogo a
+   jogo, pode levar várias horas e é retomável por jogo.
+9. Atualize as dimensões e fatos do Power BI com
+   `python -m src.transform.build_star_schema`.
 
-O enriquecimento confirma cada lote de 25 jogadores. Se a API falhar, apenas os
-jogadores sem checkpoint serão tentados na próxima execução.
-
-Os IDs de time de jogadores históricos são preservados mesmo quando a franquia
-não está na dimensão atual de times.
-
-Os campos de texto oriundos da NBA API comportam variações históricas, como
-números de camisa compostos.
+Os IDs de times de jogadores históricos são preservados mesmo quando a franquia
+não está na dimensão atual. Os campos de texto da NBA API também podem variar
+historicamente, por exemplo em números de camisa compostos.
 
 ## Roadmap
 
@@ -66,7 +61,13 @@ números de camisa compostos.
 - [x] Pipeline de Jogos históricos por temporada
 - [x] Pipeline de playoffs
 - [x] Estatísticas dos jogadores por partida
-- [ ] Modelagem Star Schema
-- [ ] Dashboard
+- [x] Modelagem Star Schema
+- [ ] Dashboard Power BI
 - [ ] Docker
 - [ ] Airflow
+
+## Camada analítica
+
+Execute `python -m src.transform.build_star_schema` depois das cargas para
+atualizar as dimensões e fatos do Power BI. O guia de conexão e medidas iniciais
+está em [docs/powerbi.md](docs/powerbi.md).

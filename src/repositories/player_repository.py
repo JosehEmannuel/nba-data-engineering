@@ -59,6 +59,28 @@ class PlayerRepository(BaseRepository):
 
         self.cursor.executemany(sql, dados)
 
+    def get_player_ids_to_enrich(self):
+        """Retorna jogadores que ainda não têm checkpoint de enriquecimento."""
+        self.cursor.execute("""
+            SELECT p.player_id
+            FROM players AS p
+            LEFT JOIN player_enrichment_checkpoint AS c
+                ON c.player_id = p.player_id
+            WHERE c.player_id IS NULL
+            ORDER BY p.player_id
+        """)
+        return [row[0] for row in self.cursor.fetchall()]
+
+    def mark_enriched(self, players: list[Player]):
+        """Registra em lote os jogadores enriquecidos com sucesso."""
+        if not players:
+            return
+        self.cursor.executemany("""
+            INSERT INTO player_enrichment_checkpoint (player_id, enriched_at)
+            VALUES (%s, UTC_TIMESTAMP())
+            ON DUPLICATE KEY UPDATE enriched_at=VALUES(enriched_at)
+        """, [(player.player_id,) for player in players])
+
     def update_players(self, players: list[Player]):
 
         sql = """
@@ -111,23 +133,3 @@ class PlayerRepository(BaseRepository):
         ]
 
         self.cursor.executemany(sql, dados)
-
-    def get_player_ids_to_enrich(self):
-        self.cursor.execute("""
-            SELECT p.player_id
-            FROM players AS p
-            LEFT JOIN player_enrichment_checkpoint AS c
-                ON c.player_id = p.player_id
-            WHERE c.player_id IS NULL
-            ORDER BY p.player_id
-        """)
-        return [row[0] for row in self.cursor.fetchall()]
-
-    def mark_enriched(self, players: list[Player]):
-        if not players:
-            return
-        self.cursor.executemany("""
-            INSERT INTO player_enrichment_checkpoint (player_id, enriched_at)
-            VALUES (%s, UTC_TIMESTAMP())
-            ON DUPLICATE KEY UPDATE enriched_at=VALUES(enriched_at)
-        """, [(player.player_id,) for player in players])

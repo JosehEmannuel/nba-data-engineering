@@ -22,3 +22,13 @@ CREATE INDEX idx_player_game_stats_team ON player_game_stats (team_id);
 
 CREATE INDEX idx_player_game_stats_checkpoint_date
     ON player_game_stats_checkpoint (loaded_at);
+
+CREATE INDEX idx_fact_games_season ON fact_games (season, season_type);
+
+CREATE INDEX idx_fact_games_date ON fact_games (date_key);
+
+CREATE INDEX idx_fact_player_stats_player ON fact_player_game_stats (player_id);
+
+CREATE INDEX idx_fact_player_stats_team ON fact_player_game_stats (team_id);
+
+CREATE INDEX idx_fact_player_stats_season ON fact_player_game_stats (season, season_type);

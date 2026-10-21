@@ -59,6 +59,7 @@ def initialize_database():
         cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{settings.db_name}`")
         cursor.execute(f"USE `{settings.db_name}`")
         _execute_sql_file(cursor, "schema.sql")
+        _execute_sql_file(cursor, "star_schema.sql")
         _ensure_column(cursor, "games", "season_type", "VARCHAR(30) NOT NULL DEFAULT 'Regular Season' AFTER season")
         _remove_legacy_player_team_foreign_key(cursor)
         for filename in ("indexes.sql", "views.sql"):
